@@ -1,8 +1,10 @@
 <?php
 
+use Clue\React\Soap\Client;
 use Clue\React\Soap\Factory;
 use Clue\React\Soap\Proxy;
-use Clue\React\Soap\Client;
+use Clue\React\Soap\RequestException;
+use Clue\React\Soap\Response;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -16,13 +18,16 @@ $factory->createClient('http://www.thomas-bayer.com/axis2/services/BLZService?ws
 
     $api = new Proxy($client);
 
-    $api->getBank(array('blz' => $blz))->then(
-        function ($result) {
+    $api->getBank(['blz' => $blz])->then(
+        function (Response $response) {
             echo 'SUCCESS!' . PHP_EOL;
-            var_dump($result);
+            var_dump((string)$response->getRequest()->getBody());
+            var_dump((string)$response->getResponse()->getBody());
+            var_dump($response->getResult());
         },
-        function (Exception $e) {
+        function (RequestException $e) {
             echo 'ERROR: ' . $e->getMessage() . PHP_EOL;
+            var_dump((string)$e->getRequest()->getBody());
         }
     );
 });

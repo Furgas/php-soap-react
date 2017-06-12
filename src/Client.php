@@ -6,6 +6,7 @@ use Clue\React\Buzz\Browser;
 use Exception;
 use Clue\React\Soap\Protocol\ClientEncoder;
 use Clue\React\Soap\Protocol\ClientDecoder;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use React\Promise\Deferred;
 
@@ -43,19 +44,23 @@ class Client
         }
 
         return $this->browser->send($request)->then(
-            array($this, 'handleResponse'),
-            array($this, 'handleError')
+        	function(ResponseInterface $response) use ($request) {
+        		return $this->handleResponse($request, $response);
+	        },
+            function (Exception $error) use ($request) {
+                $this->handleError($error, $request);
+            }
         );
     }
 
-    public function handleResponse(ResponseInterface $response)
+    public function handleResponse(RequestInterface $request, ResponseInterface $response)
     {
-        return $this->decoder->decode((string)$response->getBody());
+        return new Response($this->decoder->decode((string)$response->getBody()), $request, $response);
     }
 
-    public function handleError(Exception $error)
+    public function handleError(Exception $error, RequestInterface $request)
     {
-        throw $error;
+        throw new RequestException($request, $error);
     }
 
     public function getFunctions()
